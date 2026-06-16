@@ -56,7 +56,7 @@ Create a local config from `config.example.json`, then update `query`, `batch_id
 Chrome run from the Codex Node REPL:
 
 ```js
-const { setupBrowserRuntime } = await import("C:/Users/lovane/.codex/plugins/cache/openai-bundled/chrome/26.609.71450/scripts/browser-client.mjs");
+const { setupBrowserRuntime } = await import("<你的 Codex Chrome 插件目录>/scripts/browser-client.mjs");
 await setupBrowserRuntime({ globals: globalThis });
 globalThis.browser = await agent.browsers.get("extension");
 
@@ -81,8 +81,8 @@ Dry-run on existing `Clippings` without editing `wiki/maps` or `wiki/log.md`:
 ```powershell
 python -X utf8 scripts\analyze_clippings.py `
   --config config.example.json `
-  --query "德国 HiWi 申请" `
-  --batch-id dry-run-xhs-hiwi `
+  --query "GRE 备考方法" `
+  --batch-id dry-run-xhs-gre `
   --dry-run
 ```
 

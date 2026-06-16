@@ -1,8 +1,8 @@
 {
-  "query": "德国 HiWi 申请",
+  "query": "雅思口语怎么学",
   "max_items": 20,
-  "batch_id": "xhs-2026-06-16-hiwi",
-  "vault_dir": "C:/Users/lovane/Desktop/workplace",
+  "batch_id": "xhs-2026-06-16-ielts-speaking",
+  "vault_dir": "<你的 Obsidian vault 路径>",
   "clip_dir": "Clippings",
   "output_dir": "wiki/maps",
   "evidence_dir": "tmp/xhs-obsidian-clipper",

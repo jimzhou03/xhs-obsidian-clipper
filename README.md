@@ -42,19 +42,19 @@ xhs-obsidian-clipper/
 把本仓库复制或克隆到你的 Codex skills 目录：
 
 ```powershell
-git clone https://github.com/jimzhou03/xhs-obsidian-clipper.git C:\Users\lovane\.codex\skills\xhs-obsidian-clipper
+git clone https://github.com/jimzhou03/xhs-obsidian-clipper.git "$env:USERPROFILE\.codex\skills\xhs-obsidian-clipper"
 ```
 
 如果已经克隆到其他位置，也可以把整个目录复制到：
 
 ```text
-C:\Users\lovane\.codex\skills\xhs-obsidian-clipper
+<你的用户目录>\.codex\skills\xhs-obsidian-clipper
 ```
 
 之后在 Codex 中可以这样说：
 
 ```text
-用 $xhs-obsidian-clipper 抓取小红书上关于德国 HiWi 申请的 20 篇帖子，保存到 Obsidian，并总结成主题地图。
+用 $xhs-obsidian-clipper 抓取小红书上关于雅思口语怎么学的 20 篇帖子，保存到 Obsidian，并总结成主题地图。
 ```
 
 ## 一次性准备
@@ -92,10 +92,10 @@ Copy-Item config.example.json config.local.json
 
 ```json
 {
-  "query": "德国 HiWi 申请",
+  "query": "雅思口语怎么学",
   "max_items": 20,
-  "batch_id": "xhs-2026-06-16-hiwi",
-  "vault_dir": "C:/Users/lovane/Desktop/workplace",
+  "batch_id": "xhs-2026-06-16-ielts-speaking",
+  "vault_dir": "<你的 Obsidian vault 路径>",
   "clip_dir": "Clippings",
   "output_dir": "wiki/maps"
 }
@@ -140,13 +140,13 @@ tags:
 在 Codex 的 Chrome 插件环境里执行下面的 Node REPL 代码。路径要替换成你本机仓库位置。
 
 ```js
-const { setupBrowserRuntime } = await import("C:/Users/lovane/.codex/plugins/cache/openai-bundled/chrome/26.609.71450/scripts/browser-client.mjs");
+const { setupBrowserRuntime } = await import("<你的 Codex Chrome 插件目录>/scripts/browser-client.mjs");
 await setupBrowserRuntime({ globals: globalThis });
 globalThis.browser = await agent.browsers.get("extension");
 
-const mod = await import("file:///C:/Users/lovane/.codex/skills/xhs-obsidian-clipper/scripts/codex_chrome_xhs_clipper.mjs");
+const mod = await import("file:///<你的 Codex skills 目录>/xhs-obsidian-clipper/scripts/codex_chrome_xhs_clipper.mjs");
 await mod.runXhsObsidianClipper({
-  configPath: "C:/Users/lovane/.codex/skills/xhs-obsidian-clipper/config.local.json"
+  configPath: "<你的 Codex skills 目录>/xhs-obsidian-clipper/config.local.json"
 });
 ```
 
@@ -189,8 +189,8 @@ wiki/maps/小红书-<关键词>-<YYYY-MM-DD>.md
 ```powershell
 python -X utf8 scripts\analyze_clippings.py `
   --config config.example.json `
-  --query "德国 HiWi 申请" `
-  --batch-id dry-run-xhs-hiwi `
+  --query "GRE 备考方法" `
+  --batch-id dry-run-xhs-gre `
   --dry-run
 ```
 
@@ -199,12 +199,12 @@ python -X utf8 scripts\analyze_clippings.py `
 用户可以直接说：
 
 ```text
-用 $xhs-obsidian-clipper 抓取小红书上关于德国留学生找 HiWi 的 20 篇帖子，保存到 Obsidian，然后总结成一份主题地图。
+用 $xhs-obsidian-clipper 抓取小红书上关于 GRE 备考方法的 20 篇帖子，保存到 Obsidian，然后总结成一份主题地图。
 ```
 
 Codex 应该执行：
 
-1. 从输入中提取关键词，例如 `德国留学生 找 HiWi`。
+1. 从输入中提取关键词，例如 `GRE 备考方法`。
 2. 根据本地 vault 生成 `config.local.json` 或临时配置。
 3. 使用 Chrome 插件打开小红书搜索页。
 4. 如果未登录或遇到验证码，停止并让用户手动处理。
@@ -224,7 +224,7 @@ Codex 应该执行：
 ```powershell
 python -X utf8 -m py_compile scripts\analyze_clippings.py
 node --check scripts\codex_chrome_xhs_clipper.mjs
-python -X utf8 C:\Users\lovane\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
+python -X utf8 "$env:USERPROFILE\.codex\skills\.system\skill-creator\scripts\quick_validate.py" .
 ```
 
 ## 许可
