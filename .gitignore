@@ -1,0 +1,9 @@
+config.local.json
+tmp/
+Clippings/
+wiki/
+raw/
+*.pyc
+__pycache__/
+.DS_Store
+Thumbs.db

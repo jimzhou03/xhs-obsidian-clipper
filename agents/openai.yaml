@@ -1,0 +1,7 @@
+interface:
+  display_name: "XHS Obsidian Clipper"
+  short_description: "Search Xiaohongshu and summarize clips into Obsidian"
+  default_prompt: "Use $xhs-obsidian-clipper to search Xiaohongshu for a topic, clip 20 posts into Obsidian, and summarize the saved notes."
+
+policy:
+  allow_implicit_invocation: true
