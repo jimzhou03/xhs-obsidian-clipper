@@ -16,7 +16,8 @@ description: Automate Xiaohongshu-to-Obsidian research capture and synthesis. Us
    - Chrome must have the Codex Chrome Extension connected.
    - The user must already be logged in to Xiaohongshu in Chrome.
    - Obsidian Desktop must have the target vault open.
-   - Obsidian Web Clipper must save into the vault's `Clippings` folder.
+   - Obsidian Web Clipper must target the real Obsidian vault name, for example `workplace`; do not use `Clippings/{{title}}` as the vault name.
+   - Obsidian Web Clipper template path or note location must save into the vault's `Clippings` folder.
    - Web Clipper should have a keyboard shortcut; default examples use `Alt+Shift+O`.
 
 3. Configure a batch.
@@ -45,6 +46,7 @@ description: Automate Xiaohongshu-to-Obsidian research capture and synthesis. Us
 - Do not bypass login, captcha, risk-control, paid, private, or restricted content.
 - Stop and ask the user to handle login/captcha if the runner reports `blocked`.
 - If Web Clipper creates empty `Untitled*.md` files with blank `title/source` and no body, report `blank_or_unresolved_clipping_created` and ask the user to fix Web Clipper focus/template/shortcut settings before retrying.
+- If Obsidian reports `Vault not found` and the URL contains `vault=Clippings`, explain that `Clippings/{{title}}` was entered as a vault name; the vault should be the real Obsidian vault name, and `Clippings/{{title}}` belongs in the template path or note location.
 - Do not transmit private vault files to external sites.
 - Keep the run slow and bounded; do not scrape more than 20 posts per user request.
 - Preserve source links in all Obsidian summaries.

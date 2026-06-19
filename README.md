@@ -225,11 +225,12 @@ Codex 应该执行：
 
 1. 确认焦点在 Chrome 的网页标签页上，不在 Obsidian 窗口里。
 2. 确认快捷键是在 `chrome://extensions/shortcuts` 里绑定给 **Obsidian Web Clipper**，不是 Obsidian 桌面端自己的快捷键。
-3. 打开 Obsidian Web Clipper 的模板设置，保存位置应是 `Clippings/{{title}}` 或至少是 `Clippings`。
-4. 模板正文必须包含 `{{content}}`；可以直接复制 `templates/xhs-web-clipper-template.md`。
-5. 先在普通文章网页上测试，成功标准是 `Clippings` 下出现新 Markdown，且 `title`、`source`、正文都非空。
-6. 小红书要打开具体帖子详情页后再 clip；搜索结果页可能只能保存空内容或弱内容。
-7. 如果弹窗需要时间加载预览，把 `chrome.open_delay_ms` 调大到 `3000` 或 `5000`，不要过早按 `Enter`。
+3. 在 `General settings -> Vaults` 里只能填写 Obsidian vault 名，例如 `workplace`；不要填写 `Clippings/{{title}}`。如果这里已经有 `Clippings/{{title}}`，删除它或改成实际 vault 名。
+4. `Clippings/{{title}}` 应该放在 Web Clipper 的模板保存路径、note location 或 path 字段里；如果模板只支持文件夹，就填 `Clippings`。
+5. 模板正文必须包含 `{{content}}`；可以直接复制 `templates/xhs-web-clipper-template.md`。
+6. 先在普通文章网页上测试，成功标准是 `Clippings` 下出现新 Markdown，且 `title`、`source`、正文都非空。
+7. 小红书要打开具体帖子详情页后再 clip；搜索结果页可能只能保存空内容或弱内容。
+8. 如果弹窗需要时间加载预览，把 `chrome.open_delay_ms` 调大到 `3000` 或 `5000`，不要过早按 `Enter`。
 
 runner 会把这种空文件标记为 `blank_or_unresolved_clipping_created`，不会把它算作成功剪藏。
 
