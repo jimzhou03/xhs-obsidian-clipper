@@ -64,10 +64,11 @@ git clone https://github.com/jimzhou03/xhs-obsidian-clipper.git "$env:USERPROFIL
 3. 你已经用自己的账号登录小红书。
 4. Obsidian Desktop 已打开目标 vault。
 5. Web Clipper 保存目录设置为 `Clippings`。
-6. 给 Obsidian Web Clipper 设置快捷键。默认配置是：
+6. 给 Obsidian Web Clipper 设置快捷键。自动化默认使用“打开 Obsidian Clipper”而不是“快速剪藏”，因为快速剪藏在部分 Windows/Obsidian URI 场景下会生成空的 `Untitled`。推荐配置是：
 
 ```text
-Alt + Shift + O
+Open Obsidian Clipper: Ctrl + Shift + O
+Quick clip: 可保留 Alt + Shift + O，但不要作为自动化默认入口
 ```
 
 如果你的快捷键不同，修改 `config.local.json` 里的：
@@ -75,7 +76,8 @@ Alt + Shift + O
 ```json
 {
   "chrome": {
-    "clipper_shortcut": ["Alt", "Shift", "O"]
+    "clipper_shortcut": ["Control", "Shift", "O"],
+    "open_delay_ms": 3000
   }
 }
 ```
@@ -232,7 +234,7 @@ Codex 应该执行：
 7. 小红书要打开具体帖子详情页后再 clip；搜索结果页可能只能保存空内容或弱内容。
 8. 如果弹窗需要时间加载预览，把 `chrome.open_delay_ms` 调大到 `3000` 或 `5000`，不要过早按 `Enter`。
 
-runner 会把这种空文件标记为 `blank_or_unresolved_clipping_created`，不会把它算作成功剪藏。
+runner 会把这种空文件标记为 `blank_or_unresolved_clipping_created`，不会把它算作成功剪藏。若 `Alt+Shift+O` 快速剪藏持续生成空 `Untitled`，改用 `Ctrl+Shift+O` 打开完整 Clipper 弹窗，确认弹窗里 `title/source/content` 已经出现后再保存。
 
 ## 开发校验
 

@@ -18,7 +18,7 @@ description: Automate Xiaohongshu-to-Obsidian research capture and synthesis. Us
    - Obsidian Desktop must have the target vault open.
    - Obsidian Web Clipper must target the real Obsidian vault name, for example `workplace`; do not use `Clippings/{{title}}` as the vault name.
    - Obsidian Web Clipper template path or note location must save into the vault's `Clippings` folder.
-   - Web Clipper should have a keyboard shortcut; default examples use `Alt+Shift+O`.
+   - Web Clipper should have a keyboard shortcut. For automation, prefer `Ctrl+Shift+O` for Open Obsidian Clipper over `Alt+Shift+O` Quick clip, because Quick clip can create blank `Untitled` notes when the Obsidian URI or clipboard handoff fails.
 
 3. Configure a batch.
    - Default `max_items` to `20`; do not exceed 20 in this MVP.
@@ -45,7 +45,7 @@ description: Automate Xiaohongshu-to-Obsidian research capture and synthesis. Us
 - Do not inspect Chrome cookies, localStorage, passwords, session stores, or browser profile files.
 - Do not bypass login, captcha, risk-control, paid, private, or restricted content.
 - Stop and ask the user to handle login/captcha if the runner reports `blocked`.
-- If Web Clipper creates empty `Untitled*.md` files with blank `title/source` and no body, report `blank_or_unresolved_clipping_created` and ask the user to fix Web Clipper focus/template/shortcut settings before retrying.
+- If Web Clipper creates empty `Untitled*.md` files with blank `title/source` and no body, report `blank_or_unresolved_clipping_created`; first switch from Quick clip (`Alt+Shift+O`) to Open Obsidian Clipper (`Ctrl+Shift+O`) and let the popup load before pressing Enter, then ask the user to fix focus/template/site-access settings if it still fails.
 - If Obsidian reports `Vault not found` and the URL contains `vault=Clippings`, explain that `Clippings/{{title}}` was entered as a vault name; the vault should be the real Obsidian vault name, and `Clippings/{{title}}` belongs in the template path or note location.
 - Do not transmit private vault files to external sites.
 - Keep the run slow and bounded; do not scrape more than 20 posts per user request.
