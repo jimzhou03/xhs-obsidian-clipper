@@ -44,6 +44,7 @@ description: Automate Xiaohongshu-to-Obsidian research capture and synthesis. Us
 - Do not inspect Chrome cookies, localStorage, passwords, session stores, or browser profile files.
 - Do not bypass login, captcha, risk-control, paid, private, or restricted content.
 - Stop and ask the user to handle login/captcha if the runner reports `blocked`.
+- If Web Clipper creates empty `Untitled*.md` files with blank `title/source` and no body, report `blank_or_unresolved_clipping_created` and ask the user to fix Web Clipper focus/template/shortcut settings before retrying.
 - Do not transmit private vault files to external sites.
 - Keep the run slow and bounded; do not scrape more than 20 posts per user request.
 - Preserve source links in all Obsidian summaries.

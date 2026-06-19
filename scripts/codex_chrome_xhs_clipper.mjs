@@ -239,7 +239,30 @@ async function triggerClipper(tab, config) {
 
   await tab.playwright.waitForTimeout(config.chrome.after_save_delay_ms);
   const created = await waitForNewMarkdown(config, before, startedAtMs);
-  return created.map((file) => relativeToVault(config, file.absolute));
+  const valid = [];
+  const invalid = [];
+  for (const file of created) {
+    if (await clippingLooksUseful(file.absolute)) {
+      valid.push(relativeToVault(config, file.absolute));
+    } else {
+      invalid.push(relativeToVault(config, file.absolute));
+    }
+  }
+  return { valid, invalid };
+}
+
+async function clippingLooksUseful(absolutePath) {
+  let raw = "";
+  try {
+    raw = await fs.readFile(absolutePath, "utf8");
+  } catch {
+    return false;
+  }
+  const body = raw.replace(/^---[\s\S]*?---\s*/, "").trim();
+  const hasResolvedTitle = /^title:\s*["']?\S.+$/m.test(raw);
+  const hasResolvedSource = /^source:\s*["']?https?:\/\//m.test(raw);
+  const hasUsefulBody = body.length >= 80;
+  return hasUsefulBody && (hasResolvedTitle || hasResolvedSource);
 }
 
 async function clipOne(tab, config, url, index) {
@@ -270,16 +293,20 @@ async function clipOne(tab, config, url, index) {
       return result;
     }
 
-    const savedFiles = await triggerClipper(tab, config);
-    if (!savedFiles.length) {
+    const clipResult = await triggerClipper(tab, config);
+    if (!clipResult.valid.length) {
       result.status = "failed";
-      result.reason = "clip_timeout_no_new_markdown";
+      result.reason = clipResult.invalid.length
+        ? "blank_or_unresolved_clipping_created"
+        : "clip_timeout_no_new_markdown";
+      result.invalid_files = clipResult.invalid;
       return result;
     }
 
     result.status = "saved";
-    result.saved_files = savedFiles;
-    result.saved_file = savedFiles[0];
+    result.saved_files = clipResult.valid;
+    result.saved_file = clipResult.valid[0];
+    result.invalid_files = clipResult.invalid;
     return result;
   } catch (error) {
     result.status = "failed";

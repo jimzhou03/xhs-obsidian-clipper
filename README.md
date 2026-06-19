@@ -219,6 +219,20 @@ Codex 应该执行：
 - 如果 Web Clipper 弹窗打开后 `Enter` 不能直接保存，需要手动调整 Web Clipper 设置或修改 `chrome.save_keys`。
 - 总结脚本会做保守抽取和主题地图草稿；高质量结论仍建议 Codex 基于 `evidence.json` 再读一遍并润色。
 
+## 排查：保存成空的 Untitled
+
+如果按快捷键后 Obsidian 只创建 `Untitled.md`、`Untitled 1.md` 这类空文件，并且 frontmatter 里的 `title/source/created` 都没有值，说明当前保存动作没有拿到 Chrome 当前网页内容。优先按下面顺序检查：
+
+1. 确认焦点在 Chrome 的网页标签页上，不在 Obsidian 窗口里。
+2. 确认快捷键是在 `chrome://extensions/shortcuts` 里绑定给 **Obsidian Web Clipper**，不是 Obsidian 桌面端自己的快捷键。
+3. 打开 Obsidian Web Clipper 的模板设置，保存位置应是 `Clippings/{{title}}` 或至少是 `Clippings`。
+4. 模板正文必须包含 `{{content}}`；可以直接复制 `templates/xhs-web-clipper-template.md`。
+5. 先在普通文章网页上测试，成功标准是 `Clippings` 下出现新 Markdown，且 `title`、`source`、正文都非空。
+6. 小红书要打开具体帖子详情页后再 clip；搜索结果页可能只能保存空内容或弱内容。
+7. 如果弹窗需要时间加载预览，把 `chrome.open_delay_ms` 调大到 `3000` 或 `5000`，不要过早按 `Enter`。
+
+runner 会把这种空文件标记为 `blank_or_unresolved_clipping_created`，不会把它算作成功剪藏。
+
 ## 开发校验
 
 ```powershell
