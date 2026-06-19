@@ -132,7 +132,54 @@ async function openSearch(tab, config) {
     state: "domcontentloaded",
     timeoutMs: config.chrome.navigation_timeout_ms,
   });
-  return url;
+  await tab.playwright.waitForTimeout(1500);
+
+  let state = await searchState(tab);
+  if (!searchStateMatches(state, config.query)) {
+    await submitSearchFromCurrentPage(tab, config.query);
+    await tab.playwright.waitForTimeout(3000);
+    state = await searchState(tab);
+  }
+
+  return {
+    requested_url: url,
+    final_url: await tab.url(),
+    state,
+    confirmed: searchStateMatches(state, config.query),
+  };
+}
+
+async function searchState(tab) {
+  return await tab.playwright.evaluate(() => {
+    const inputs = Array.from(document.querySelectorAll("input"))
+      .map((input) => input.value || input.getAttribute("placeholder") || "")
+      .filter(Boolean)
+      .slice(0, 8);
+    return {
+      url: location.href,
+      title: document.title || "",
+      inputs,
+    };
+  });
+}
+
+function searchStateMatches(state, query) {
+  const decodedUrl = decodeURIComponent(state?.url || "");
+  const inputs = state?.inputs || [];
+  return (
+    decodedUrl.includes(query) ||
+    inputs.some((value) => String(value).includes(query))
+  );
+}
+
+async function submitSearchFromCurrentPage(tab, query) {
+  const textbox = tab.playwright.locator('input[type="text"]');
+  const count = await textbox.count();
+  if (!count) return false;
+  const target = count === 1 ? textbox : textbox.nth(0);
+  await target.fill(query, { timeoutMs: 8000 });
+  await target.press("Enter", { timeoutMs: 8000 });
+  return true;
 }
 
 async function pageBlockerState(tab) {
@@ -252,7 +299,7 @@ async function writeManifest(config, manifest) {
 }
 
 export async function runXhsObsidianClipper(options = {}) {
-  const activeBrowser = globalThis.browser;
+  const activeBrowser = options.browser || globalThis.browser;
   if (!activeBrowser) {
     throw new Error(
       "Chrome browser runtime is not initialized. Run setupBrowserRuntime and agent.browsers.get(\"extension\") first."
@@ -282,7 +329,13 @@ export async function runXhsObsidianClipper(options = {}) {
   };
 
   try {
-    manifest.search_url = await openSearch(tab, config);
+    manifest.search = await openSearch(tab, config);
+    manifest.search_url = manifest.search.requested_url;
+    if (!manifest.search.confirmed) {
+      manifest.status = "blocked";
+      manifest.reason = "search_not_confirmed";
+      return manifest;
+    }
     const blocker = await pageBlockerState(tab);
     if (blocker.blocker) {
       manifest.status = "blocked";
