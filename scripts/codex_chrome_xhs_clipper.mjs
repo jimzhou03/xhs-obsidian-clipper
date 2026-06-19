@@ -11,7 +11,7 @@ const DEFAULTS = {
   chrome: {
     search_url:
       "https://www.xiaohongshu.com/search_result?keyword={query}&source=web_explore_feed",
-    clipper_shortcut: ["Control", "Shift", "O"],
+    clipper_shortcut: ["Alt", "Shift", "C"],
     save_keys: ["Enter"],
     open_delay_ms: 3000,
     after_save_delay_ms: 1200,

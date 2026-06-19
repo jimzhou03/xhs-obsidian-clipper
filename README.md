@@ -67,8 +67,9 @@ git clone https://github.com/jimzhou03/xhs-obsidian-clipper.git "$env:USERPROFIL
 6. 给 Obsidian Web Clipper 设置快捷键。自动化默认使用“打开 Obsidian Clipper”而不是“快速剪藏”，因为快速剪藏在部分 Windows/Obsidian URI 场景下会生成空的 `Untitled`。推荐配置是：
 
 ```text
-Open Obsidian Clipper: Ctrl + Shift + O
+Open Obsidian Clipper: Alt + Shift + C
 Quick clip: 可保留 Alt + Shift + O，但不要作为自动化默认入口
+不要使用 Ctrl + Shift + O：这是 Chrome 的书签管理器快捷键，会跳转到 chrome://bookmarks
 ```
 
 如果你的快捷键不同，修改 `config.local.json` 里的：
@@ -76,7 +77,7 @@ Quick clip: 可保留 Alt + Shift + O，但不要作为自动化默认入口
 ```json
 {
   "chrome": {
-    "clipper_shortcut": ["Control", "Shift", "O"],
+    "clipper_shortcut": ["Alt", "Shift", "C"],
     "open_delay_ms": 3000
   }
 }
@@ -234,7 +235,7 @@ Codex 应该执行：
 7. 小红书要打开具体帖子详情页后再 clip；搜索结果页可能只能保存空内容或弱内容。
 8. 如果弹窗需要时间加载预览，把 `chrome.open_delay_ms` 调大到 `3000` 或 `5000`，不要过早按 `Enter`。
 
-runner 会把这种空文件标记为 `blank_or_unresolved_clipping_created`，不会把它算作成功剪藏。若 `Alt+Shift+O` 快速剪藏持续生成空 `Untitled`，改用 `Ctrl+Shift+O` 打开完整 Clipper 弹窗，确认弹窗里 `title/source/content` 已经出现后再保存。
+runner 会把这种空文件标记为 `blank_or_unresolved_clipping_created`，不会把它算作成功剪藏。若 `Alt+Shift+O` 快速剪藏持续生成空 `Untitled`，说明 Quick clip 到 Obsidian 的自动交接链路失败。改用 `Alt+Shift+C` 打开完整 Clipper 弹窗，确认弹窗里 `title/source/content` 已经出现后再保存。
 
 ## 开发校验
 
