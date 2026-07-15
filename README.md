@@ -1,14 +1,16 @@
 # xhs-obsidian-clipper
 
-一个给 Codex 使用的 Skill：根据用户在 Codex 里的自然语言需求，自动提取小红书检索关键词，使用用户已登录的 Chrome 小红书账号检索帖子，通过 Obsidian Web Clipper 保存到 Obsidian 的 `Clippings` 文件夹，然后读取这些剪藏并生成总结文档。
+一个给 Codex 使用的 Skill：根据自然语言需求，使用 Codex 内置浏览器或用户已登录的 Chrome 检索小红书帖子，直接保存正文、页面已加载评论、本地图片和可续跑 manifest，再生成 Obsidian 来源笔记与主题地图。
 
 ## 能做什么
 
 - 从用户输入中自动提取小红书搜索关键词。
-- 使用 Codex Chrome 插件控制用户自己的 Chrome。
+- 使用 Codex 内置浏览器，或在需要沿用登录态时控制用户自己的 Chrome。
 - 打开小红书搜索结果页，收集帖子链接。
-- 逐篇打开帖子，并触发 Obsidian Web Clipper 保存为 Markdown。
-- 读取保存后的 `Clippings/*.md`，按来源去重、清洗页面噪声。
+- 逐篇打开帖子，直接提取正文、图片和本次页面已加载的评论。
+- 将图片下载到 `raw/assets/小红书/`，原始帖子保存到 `raw/archive/网络内容/小红书/posts/`。
+- 每篇写入 checkpoint，可在中断后按来源 URL 续跑；单批默认 50、硬上限 100。
+- 读取本批原始笔记，按来源去重并保留抓取完整性字段。
 - 生成 evidence bundle、主题地图预览，以及可写入 Obsidian 的 `wiki/maps/小红书-<关键词>-<日期>.md`。
 - 追加 `wiki/log.md`，保留批处理记录。
 
@@ -16,7 +18,8 @@
 
 - 不绕过小红书登录、验证码、风控、付费墙或私密内容。
 - 不读取 Chrome cookie、localStorage、密码或浏览器 profile。
-- 不直接调用 Obsidian Web Clipper 未公开的内部接口。
+- 不要求安装 Obsidian Web Clipper；`web_clipper` 仅保留为兼容模式。
+- 不承诺“平台全部评论”：只保存当前页面实际加载且可结构化提取的评论，并记录上限和缺失状态。
 - 不保证小红书页面结构长期稳定；页面变化时需要调整 runner。
 - 不把小红书经验贴当成官方政策来源。税务、签证、学校规定、劳动法等内容必须二次核验。
 
@@ -59,12 +62,10 @@ git clone https://github.com/jimzhou03/xhs-obsidian-clipper.git "$env:USERPROFIL
 
 ## 一次性准备
 
-1. Chrome 已安装 Codex Chrome Extension。
-2. Chrome 已安装 Obsidian Web Clipper。
-3. 你已经用自己的账号登录小红书。
-4. Obsidian Desktop 已打开目标 vault。
-5. Web Clipper 保存目录设置为 `Clippings`。
-6. 给 Obsidian Web Clipper 设置快捷键。自动化默认使用“打开 Obsidian Clipper”而不是“快速剪藏”，因为快速剪藏在部分 Windows/Obsidian URI 场景下会生成空的 `Untitled`。推荐配置是：
+1. 优先打开 Codex 内置浏览器；若它没有登录态，再使用安装了 Codex Extension 的 Chrome。
+2. 你已经用自己的账号登录小红书。
+3. Obsidian vault 路径可由 Codex 写入。
+4. 仅当 `capture_mode` 显式设为 `web_clipper` 时，才需要 Obsidian Web Clipper、Obsidian Desktop 和下列快捷键：
 
 ```text
 Open Obsidian Clipper: Alt + Shift + C
@@ -96,10 +97,14 @@ Copy-Item config.example.json config.local.json
 ```json
 {
   "query": "雅思口语怎么学",
-  "max_items": 20,
+  "max_items": 50,
+  "hard_max_items": 100,
+  "checkpoint_size": 20,
   "batch_id": "xhs-2026-06-16-ielts-speaking",
   "vault_dir": "<你的 Obsidian vault 路径>",
-  "clip_dir": "Clippings",
+  "capture_mode": "direct",
+  "raw_dir": "raw/archive/网络内容/小红书/posts",
+  "asset_dir": "raw/assets/小红书",
   "output_dir": "wiki/maps"
 }
 ```
@@ -107,10 +112,12 @@ Copy-Item config.example.json config.local.json
 说明：
 
 - `query`：小红书检索词。实际使用 skill 时，Codex 会从用户输入中自动推断。
-- `max_items`：本 MVP 限制最多 20 篇。
+- `max_items`：默认 50 篇，允许 1–100；建议按 20 篇 checkpoint 检查一次。
+- `hard_max_items`：安全硬上限，当前不得高于 100。
 - `batch_id`：本次批次 ID，建议包含日期和关键词。
 - `vault_dir`：Obsidian vault 路径。
-- `clip_dir`：Web Clipper 原始剪藏目录。
+- `capture_mode`：默认 `direct`；`web_clipper` 仅用于旧流程兼容。
+- `raw_dir`、`asset_dir`：原始帖子 Markdown 与本地图片的永久归档位置。
 - `output_dir`：总结文档输出目录。
 
 ## Web Clipper 模板
@@ -138,14 +145,14 @@ tags:
 
 `search_query` 和 `batch_id` 可以先留空；分析脚本会优先使用 runner 的 manifest 追踪本批文件。
 
-## 运行 Chrome 剪藏
+## 运行浏览器抓取
 
-在 Codex 的 Chrome 插件环境里执行下面的 Node REPL 代码。路径要替换成你本机仓库位置。
+在 Codex 浏览器插件环境里执行下面的 Node REPL 代码。内置浏览器使用 `iab`；Chrome 使用 `extension`。
 
 ```js
 const { setupBrowserRuntime } = await import("<你的 Codex Chrome 插件目录>/scripts/browser-client.mjs");
 await setupBrowserRuntime({ globals: globalThis });
-globalThis.browser = await agent.browsers.get("extension");
+globalThis.browser = await agent.browsers.get("iab");
 
 const mod = await import("file:///<你的 Codex skills 目录>/xhs-obsidian-clipper/scripts/codex_chrome_xhs_clipper.mjs");
 await mod.runXhsObsidianClipper({
@@ -164,7 +171,8 @@ manifest 中会记录：
 - 搜索关键词
 - 收集到的链接
 - 每篇帖子是否保存成功
-- 新生成的 Markdown 文件路径
+- 正文、图片、评论的实际保存数量和完整性状态
+- 新生成的 Markdown、图片和页面快照路径
 - 失败或阻塞原因
 
 ## 生成 Obsidian 总结文档
@@ -209,20 +217,20 @@ Codex 应该执行：
 
 1. 从输入中提取关键词，例如 `GRE 备考方法`。
 2. 根据本地 vault 生成 `config.local.json` 或临时配置。
-3. 使用 Chrome 插件打开小红书搜索页。
+3. 使用内置浏览器或已登录 Chrome 打开小红书搜索页。
 4. 如果未登录或遇到验证码，停止并让用户手动处理。
-5. 调用 Web Clipper 保存帖子到 `Clippings`。
+5. 直接保存帖子正文、页面已加载评论、本地图片和页面快照。
 6. 读取本批剪藏，生成 evidence 和总结文档。
 7. 在 Codex 中反馈保存数量、失败数量和生成文件路径。
 
 ## 当前限制
 
-- Web Clipper 是浏览器扩展 UI 工作流，本项目不假设它有稳定公开批量 API。
 - 小红书页面结构、登录策略和风控策略可能变化。
-- 如果 Web Clipper 弹窗打开后 `Enter` 不能直接保存，需要手动调整 Web Clipper 设置或修改 `chrome.save_keys`。
+- 图片型正文仍可能需要单独 OCR；当前默认保留原图并明确标记正文缺失。
+- 评论受懒加载、折叠回复、删除和风控影响，只能声明“本次已加载评论”，不能声明“平台全部评论”。
 - 总结脚本会做保守抽取和主题地图草稿；高质量结论仍建议 Codex 基于 `evidence.json` 再读一遍并润色。
 
-## 排查：保存成空的 Untitled
+## 兼容模式排查：保存成空的 Untitled
 
 如果按快捷键后 Obsidian 只创建 `Untitled.md`、`Untitled 1.md` 这类空文件，并且 frontmatter 里的 `title/source/created` 都没有值，说明当前保存动作没有拿到 Chrome 当前网页内容。优先按下面顺序检查：
 

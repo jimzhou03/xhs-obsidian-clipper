@@ -1,75 +1,51 @@
 ---
 name: xhs-obsidian-clipper
-description: Automate Xiaohongshu-to-Obsidian research capture and synthesis. Use when the user asks Codex to search Xiaohongshu/小红书 from their logged-in Chrome account, clip posts with Obsidian Web Clipper, save Markdown notes into an Obsidian vault Clippings folder, then read the saved posts and summarize them into an Obsidian document or Codex response.
+description: Capture Xiaohongshu posts into an Obsidian vault as auditable per-post source notes, including visible body text, locally saved post images, loaded comments, canonical URLs, completeness metadata, resumable manifests, and topic synthesis. Use when the user asks Codex to search, archive, backfill, analyze, or summarize 小红书/Xiaohongshu content into Obsidian, especially when using the bundled Browser or Chrome plugin.
 ---
 
-# Xiaohongshu Obsidian Clipper
+# Xiaohongshu to Obsidian
 
-## Core Workflow
+## Core rules
 
-1. Infer the search query from the user's request.
-   - Prefer the user's original topic phrase as the primary query.
-   - Remove only command words such as "抓取", "搜索", "小红书", "总结", "用这个 skill".
-   - If the request contains several topics, use the most specific one; ask only when multiple unrelated topics would produce different batches.
+- Use the browser explicitly chosen by the user. Use the bundled in-app Browser when the user names `浏览器`; use Chrome only when the user names Chrome or requires its extensions/session.
+- Treat direct per-post capture as the default. Do not call a batch “fully captured” when only a title, excerpt, screenshot, or synthesis note exists.
+- Keep source facts, AI analysis, and user-authored judgment separate according to the vault `AGENTS.md`.
+- Save canonical post URLs without temporary access tokens.
+- Never inspect cookies, local storage, passwords, profiles, or session files; never bypass login, captcha, risk control, paid, private, deleted, or restricted content.
 
-2. Check preconditions before live clipping.
-   - Chrome must have the Codex Chrome Extension connected.
-   - The user must already be logged in to Xiaohongshu in Chrome.
-   - Obsidian Desktop must have the target vault open.
-   - Obsidian Web Clipper must target the real Obsidian vault name, for example `workplace`; do not use `Clippings/{{title}}` as the vault name.
-   - Obsidian Web Clipper template path or note location must save into the vault's `Clippings` folder.
-   - Web Clipper should have a keyboard shortcut. For automation, prefer `Alt+Shift+C` for Open Obsidian Clipper over `Alt+Shift+O` Quick clip, because Quick clip can create blank `Untitled` notes when the Obsidian URI or clipboard handoff fails. Do not use `Ctrl+Shift+O`; Chrome reserves it for the bookmarks manager.
+## Batch policy
 
-3. Configure a batch.
-   - Default `max_items` to `20`; do not exceed 20 in this MVP.
-   - Default `clip_dir` to `Clippings`.
-   - Default `output_dir` to `wiki/maps`.
-   - Use a stable `batch_id`, for example `xhs-YYYYMMDD-topic`.
-   - If no vault path is specified, use the current workspace as the vault.
+- Default to `max_items: 50`; accept up to 100 posts in one user task.
+- Process internally in checkpoints of at most 20 posts. Write the manifest after every post so a crash can resume without repeating saved sources.
+- Deduplicate by canonical post ID before opening details.
+- For backfill, pass `source_urls` and a stable `batch_id`; do not search again unless sources are missing.
 
-4. Run Chrome clipping through the bundled JS runner.
-   - Read and follow the Chrome plugin skill instructions before controlling Chrome.
-   - Initialize the Chrome browser runtime, then import `scripts/codex_chrome_xhs_clipper.mjs`.
-   - Run `runXhsObsidianClipper({ configPath })`.
-   - The runner opens Xiaohongshu search, collects `/explore/` post links, opens each post, triggers Web Clipper, and waits for new Markdown files in `Clippings`.
-   - Treat `tmp/xhs-obsidian-clipper/<batch_id>/chrome-manifest.json` as the source of truth for clipped files.
+## Complete-capture workflow
 
-5. Analyze clipped Markdown locally.
-   - Run `scripts/analyze_clippings.py` with `python -X utf8`.
-   - Pass `--manifest` when a Chrome run produced one.
-   - Use `--write-map --update-log` when the user wants the result saved into Obsidian.
-   - For a Codex-only response, read the generated `evidence.json` and summarize in the chat without writing the final map.
+1. Read [references/capture-contract.md](references/capture-contract.md) before a live capture or backfill.
+2. Confirm the target vault and browser session. The user must already be signed in when the page requires authentication.
+3. Create a config from `config.example.json`. Keep `capture_mode: direct` unless the user explicitly wants Web Clipper.
+4. Initialize the selected bundled browser runtime and import `scripts/codex_chrome_xhs_clipper.mjs`. Pass the selected browser binding through `browser`.
+5. Run `runXhsObsidianClipper({ configPath, browser })`.
+6. Treat `tmp/xhs-obsidian-clipper/<batch_id>/chrome-manifest.json` as the source of truth. Inspect `saved`, `partial`, `failed`, and `blocked` separately.
+7. Do not synthesize a post whose raw note is absent. Partial posts may be listed as a review queue but must not support strong conclusions.
+8. Run `scripts/analyze_clippings.py` with the manifest to generate evidence and maps. Mark policy, tax, visa, school-rule, employment-law, salary, contract, and admission claims for official verification.
 
-## Safety Rules
+## Browser invocation
 
-- Do not inspect Chrome cookies, localStorage, passwords, session stores, or browser profile files.
-- Do not bypass login, captcha, risk-control, paid, private, or restricted content.
-- Stop and ask the user to handle login/captcha if the runner reports `blocked`.
-- If Web Clipper creates empty `Untitled*.md` files with blank `title/source` and no body, report `blank_or_unresolved_clipping_created`; first switch from Quick clip (`Alt+Shift+O`) to Open Obsidian Clipper (`Alt+Shift+C`) and let the popup load before pressing Enter, then ask the user to fix focus/template/site-access settings if it still fails.
-- If Obsidian reports `Vault not found` and the URL contains `vault=Clippings`, explain that `Clippings/{{title}}` was entered as a vault name; the vault should be the real Obsidian vault name, and `Clippings/{{title}}` belongs in the template path or note location.
-- Do not transmit private vault files to external sites.
-- Keep the run slow and bounded; do not scrape more than 20 posts per user request.
-- Preserve source links in all Obsidian summaries.
-- Mark policy, tax, visa, school-rule, or employment-law claims as needing official verification.
-
-## Commands
-
-Create a local config from `config.example.json`, then update `query`, `batch_id`, and shortcut settings.
-
-Chrome run from the Codex Node REPL:
+Use the browser plugin’s documented setup. After selecting a browser binding:
 
 ```js
-const { setupBrowserRuntime } = await import("<你的 Codex Chrome 插件目录>/scripts/browser-client.mjs");
-await setupBrowserRuntime({ globals: globalThis });
-globalThis.browser = await agent.browsers.get("extension");
-
-const mod = await import("file:///ABSOLUTE/PATH/TO/xhs-obsidian-clipper/scripts/codex_chrome_xhs_clipper.mjs");
+const mod = await import("file:///ABSOLUTE/PATH/xhs-obsidian-clipper/scripts/codex_chrome_xhs_clipper.mjs");
 await mod.runXhsObsidianClipper({
-  configPath: "ABSOLUTE/PATH/TO/config.local.json"
+  browser: iab,
+  configPath: "C:/ABSOLUTE/PATH/config.local.json"
 });
 ```
 
-Analyze a Chrome batch and write an Obsidian topic map:
+For Chrome, pass `browser: chrome`. Do not switch surfaces when the user explicitly selected one.
+
+## Analysis
 
 ```powershell
 python -X utf8 scripts\analyze_clippings.py `
@@ -79,30 +55,22 @@ python -X utf8 scripts\analyze_clippings.py `
   --update-log
 ```
 
-Dry-run on existing `Clippings` without editing `wiki/maps` or `wiki/log.md`:
+## Failure handling
 
-```powershell
-python -X utf8 scripts\analyze_clippings.py `
-  --config config.example.json `
-  --query "GRE 备考方法" `
-  --batch-id dry-run-xhs-gre `
-  --dry-run
-```
+- `blocked`: stop and ask the user to sign in or clear the visible verification in the selected browser.
+- `partial`: preserve the raw note and completeness metadata; schedule only the missing body, images, or comments for backfill.
+- Image download failure: preserve the original image URL and record the failure; never claim local image preservation.
+- Comment count mismatch: report “captured all comments loaded in this run,” not “all platform comments.” Hidden, deleted, folded, rate-limited, or inaccessible comments cannot be guaranteed.
+- Image-only post without OCR: mark `body_extracted: false` or `image_text_ocr_required`; do not infer the image’s claims from its title.
 
-## Output Contract
+## Output contract
 
-For each successful batch, produce:
+Each successful direct-capture batch produces:
 
+- `raw/archive/网络内容/小红书/posts/<post-id>-<title>.md`
+- `raw/assets/小红书/<post-id>/` for successfully downloaded post images
+- `tmp/xhs-obsidian-clipper/<batch_id>/snapshots/<post-id>.md`
 - `tmp/xhs-obsidian-clipper/<batch_id>/chrome-manifest.json`
-- `tmp/xhs-obsidian-clipper/<batch_id>/evidence.json`
-- `tmp/xhs-obsidian-clipper/<batch_id>/map-preview.md`
-- optionally `wiki/maps/小红书-<关键词>-<YYYY-MM-DD>.md`
-- optionally an appended record in `wiki/log.md`
+- after analysis: `evidence.json`, `map-preview.md`, and optional `wiki/maps`/`wiki/log.md` updates
 
-When responding to the user, report:
-
-- query used
-- number of links collected
-- number of posts saved
-- generated Obsidian file path or preview path
-- any blocked/failed items and the reason
+Report the requested count, collected count, saved count, partial count, image saved/failed totals, loaded comment totals, blocked items, manifest path, and generated Obsidian paths.

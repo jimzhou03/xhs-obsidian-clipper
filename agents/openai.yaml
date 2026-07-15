@@ -1,7 +1,7 @@
 interface:
   display_name: "XHS Obsidian Clipper"
-  short_description: "Search Xiaohongshu and summarize clips into Obsidian"
-  default_prompt: "Use $xhs-obsidian-clipper to search Xiaohongshu for IELTS or GRE study tips, clip 20 posts into Obsidian, and summarize the saved notes."
+  short_description: "Archive full Xiaohongshu sources into Obsidian"
+  default_prompt: "Use $xhs-obsidian-clipper to capture Xiaohongshu posts with body text, local images, loaded comments, resumable manifests, and an Obsidian synthesis."
 
 policy:
   allow_implicit_invocation: true

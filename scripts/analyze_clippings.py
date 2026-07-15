@@ -291,6 +291,13 @@ def item_from_file(path: Path, vault_dir: Path) -> dict[str, Any] | None:
         "text": text,
         "excerpt": short_excerpt(text),
         "char_count": len(text),
+        "capture_status": str(meta.get("capture_status") or "unknown"),
+        "body_extracted": bool(meta.get("body_extracted", bool(text))),
+        "image_discovered_count": int(meta.get("image_discovered_count") or 0),
+        "image_saved_count": int(meta.get("image_saved_count") or 0),
+        "comment_captured_count": int(meta.get("comment_captured_count") or 0),
+        "comment_total_label": str(meta.get("comment_total_label") or ""),
+        "comment_limit_hit": bool(meta.get("comment_limit_hit", False)),
         "modified_at": dt.datetime.fromtimestamp(path.stat().st_mtime).isoformat(
             timespec="seconds"
         ),
@@ -366,6 +373,13 @@ def build_evidence(
                     "tags",
                     "excerpt",
                     "char_count",
+                    "capture_status",
+                    "body_extracted",
+                    "image_discovered_count",
+                    "image_saved_count",
+                    "comment_captured_count",
+                    "comment_total_label",
+                    "comment_limit_hit",
                     "modified_at",
                 )
             }
@@ -534,9 +548,10 @@ def main() -> int:
             f"xhs-{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}",
         )
     )
-    max_items = args.max_items or int(value_from_config(config, "max_items", 20))
-    if max_items > 20:
-        raise ValueError("max_items must be <= 20 for this MVP.")
+    max_items = args.max_items or int(value_from_config(config, "max_items", 50))
+    hard_max_items = int(value_from_config(config, "hard_max_items", 100))
+    if max_items < 1 or max_items > hard_max_items or hard_max_items > 100:
+        raise ValueError("max_items and hard_max_items must be between 1 and 100.")
 
     clip_dir = resolve_path(vault_dir, args.clip_dir or value_from_config(config, "clip_dir", "Clippings"))
     output_dir = resolve_path(vault_dir, args.output_dir or value_from_config(config, "output_dir", "wiki/maps"))
